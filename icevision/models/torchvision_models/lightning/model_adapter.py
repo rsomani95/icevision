@@ -21,12 +21,17 @@ class RCNNModelAdapter(LightningModelAdapter, ABC):
 
     def training_step(self, batch, batch_idx):
         (xb, yb), records = batch
-        preds = self(xb, yb)
 
-        loss = loss_fn(preds, yb)
-        self.log("train_loss", loss)
+        data = {}
+        data["img"] = xb
+        data["gt_bboxes"] = yb["bboxes"]
+        data["img_metas"] = ...  # get img_metas from records
 
-        return loss
+        outputs = self.train_step(data=data, optimizer=None)
+
+        self.log("train_loss", outputs["log_vars"])
+
+        return outputs["loss"]
 
     def validation_step(self, batch, batch_idx):
         (xb, yb), records = batch
