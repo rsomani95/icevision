@@ -17,7 +17,7 @@ valid_tfms = tfms.A.Adapter([*tfms.A.resize_and_pad(size=size), tfms.A.Normalize
 train_ds = Dataset(train_records, train_tfms)
 valid_ds = Dataset(valid_records, valid_tfms)
 
-train_dl = faster_rcnn.train_dl(train_ds, batch_size=2, shuffle=True)
+train_dl = mmdetection_models.train_dl(train_ds, batch_size=2, shuffle=True)
 valid_dl = faster_rcnn.valid_dl(valid_ds, batch_size=2, shuffle=False)
 
 ### MODEL

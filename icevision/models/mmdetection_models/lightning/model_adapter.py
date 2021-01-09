@@ -28,6 +28,16 @@ class ModelAdapter(LightningModelAdapter, ABC):
         return self.model(*args, **kwargs)
 
     def training_step(self, batch, batch_idx):
+        data, samples = batch
+
+        outputs = self.model.train_step(data=data, optimizer=None)
+
+        for k, v in outputs["log_vars"].items():
+            self.log(f"train/{k}", v)
+
+        return outputs["loss"]
+
+    def validation_step(self, batch, batch_idx):
         (xb, yb), samples = batch
         xb = torch.stack(xb)
 
@@ -50,22 +60,14 @@ class ModelAdapter(LightningModelAdapter, ABC):
             "gt_labels": [o["labels"] for o in yb],
         }
 
-        outputs = self.model.train_step(data=data, optimizer=None)
-
-        for k, v in outputs["log_vars"].items():
-            self.log(f"train/{k}", v)
-
-        return outputs["loss"]
-
-    def validation_step(self, batch, batch_idx):
-        (xb, yb), records = batch
-
         with torch.no_grad():
-            raw_preds = self(xb, yb)
+            raw_preds = self.model.val_step(data=data, optimizer=None)
+            set_trace()
+
             preds = efficientdet.convert_raw_predictions(raw_preds["detections"], 0)
             loss = efficientdet.loss_fn(raw_preds, yb)
 
-        self.accumulate_metrics(records, preds)
+        self.accumulate_metrics(samples, preds)
 
         for k, v in raw_preds.items():
             if "loss" in k:
